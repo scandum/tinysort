@@ -29,6 +29,8 @@ This is a twice-unguarded insertion sort, it is semi-adaptive.
 Benchmark
 ---------
 
+![image](https://user-images.githubusercontent.com/52607428/158867095-93781500-87d3-434c-b9b2-2b9e8493a1e3.png)
+
 |      Name |    Items | Type |     Best |  Average |  Compares | Samples |     Distribution |
 | --------- | -------- | ---- | -------- | -------- | --------- | ------- | ---------------- |
 |    bubble |        4 |   32 | 0.000142 | 0.000150 |       2.5 |    1000 |       random 1-4 |
