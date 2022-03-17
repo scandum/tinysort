@@ -1,0 +1,216 @@
+#!/usr/local/bin/tt++ -G
+
+#nop Obtain tt++ (TinTin++) from https://github.com/scandum/tintin
+#nop Use 'make install' to compile and place tt++ in /usr/local/bin
+
+#var color
+{
+	 {1}{<eaa><FFF>}
+	 {2}{<ada><FFF>}
+	 {3}{<aee><FFF>}
+	 {4}{<eae><FFF>}
+	 {5}{<ace><FFF>}
+	 {6}{<eca><FFF>}
+	 {7}{<cae><FFF>}
+	 {8}{<cea><FFF>}
+	 {9}{<aae><FFF>}
+	{10}{<fac><FFF>}
+	{11}{<eea><FFF>}
+}
+
+#alias {help}
+{
+	#draw scroll scaled <aaf> <ffa> rounded box 1 1 1 1
+		{reset: Reset bar graph data}
+		{ draw: Draw bar graph}
+		{ load: Load bench.txt}
+		{ show: Show script data}
+		{}
+		{You can also paste a benchmark table straight into the terminal.}
+}
+
+#alias {reset}
+{
+	#var loading 0;
+	#var names {};
+	#var distribution {};
+	#var distributions {};
+	#var max_time {10};
+	#var name_dist_best {};
+}
+
+#alias {load}
+{
+	#scan txt bench.txt;
+}
+
+#alias {show}
+{
+	#screen clear scroll;
+
+	#var color;
+
+	#act {^| %* | %* | %* | %* | %* | %* | %* |};
+
+	#alias {reset};
+	#alias {load};
+	#alias {draw}
+}
+
+#alias {^|%s{Name|-*} |} {#nop} {1}
+
+#alias {|%*}
+{
+	#if {$loading == 0}
+	{
+		reset;
+		#line gag;
+		#var loading 1;
+		#delay 1 wait
+	};
+	#line quiet #show {|%1};
+}
+
+#alias {wait}
+{
+	#cursor get input;
+	#if {{$input} != {}}
+	{
+		#delay 0.5 wait
+	};
+	#else
+	{
+		#var loading 0;
+		draw;
+	}
+}
+
+#alias {^$}
+{
+	help
+}
+
+#alias {init}
+{
+	#split {0} {1} {0} {-100};
+	#screen fill default Jade;
+}
+
+#alias {draw}
+{
+	init;
+
+	#var o 100;
+	#math p $o + 20;
+	#math q $o + 20;
+
+	#math height 2 + (1 + &names[]) * &distributions[];
+
+	#draw <887><FFF> tile 1 $o+02 $height+2 $p+100 { };
+	#draw <217><FFF> rounded box  1 $p+1 $height+2 $p+101 { };
+
+	#loop 1 &names[] name
+	{
+		#draw horizontal bar $name+1 $o+3 $name+1 $o+5  {1;1;$color[+$name]};
+
+		#line sub var #draw <207><FFF> lalign tile $name+1 $o+7 $name+1 $p-1 $names[+$name]
+	};
+
+	#var row 3;
+
+	#draw <247><FFF> rounded box 2 $q+18 $height $q+100;
+
+	#foreach {*distributions[%*]} {dist}
+	{
+		#draw <207><FFF> ralign tile $row $q+2 $row $q+17 {$distributions[$dist]};
+
+		#foreach {$names[%*]} {name}
+		{
+			#draw horizontal bar $row $q+19 $row $p+99 {$name_dist_best[$name][$distributions[$dist]];$max_time;$color[+@name_index{$name}]};
+			#math row $row + 1
+		};
+		#math row $row + 1
+	};
+	#if {0}
+	{
+		#format max_time {%d} {$max_time};
+		#draw <207><FFF> lalign tile $height+1 $q+19  $height+1 $q+20  {0};
+		#draw <207><FFF> ralign tile $height+1 $q+80 $height+1 $p+99 {$max_time}
+	};
+	#else
+	{
+		#draw <208><FFF> tile $height+1 $q+50 $height+1 $q+60 {time}
+	}
+}
+
+#function name_index
+{
+	#list names find {%*%1%*} result
+}
+
+#nop |                           Name |      Items |       Hits |     Misses |     Checks |       Time |
+
+#action {^|%s{Name|-*} |} {#nop} {1}
+
+#action {^|%* | %* | %* | %* | %* | %* |$}
+{
+	#var name {%1};
+
+	#if {@name_index{$name} == 0}
+	{
+		#list names insert -1 {$name}
+	};
+
+	#if {"$distribution" != "%2"}
+	{
+		#var distribution {%2};
+		#list distributions insert -1 {%2};
+	};
+
+	#if {$max_time < %6 * 1M}
+	{
+		#math max_time %6 * 1M;
+	};
+	#math name_dist_best[$name][%2] {%6 * 1M};
+}
+
+#nop |      Name |    Items | Type |     Best |  Average | Comparisons |     Distribution |
+
+#action {^|%* | %* | %* | %* | %* | %* | %* | %* |$}
+{
+	#var name {%1};
+
+	#if {@name_index{$name} == 0}
+	{
+		#list names insert -1 {$name}
+	};
+
+	#if {"$distribution" != "%8"}
+	{
+		#var distribution {%8};
+		#list distributions insert -1 {%8};
+	};
+
+	#if {$max_time < %4 * 1M}
+	{
+		#math max_time %4 * 1M;
+	};
+	#math name_dist_best[$name][%8] {%4 * 1M};
+}
+
+#event {SCREEN RESIZE}
+{
+	init
+}
+
+#event {PROGRAM START}
+{
+	reset;
+	init;
+	#line quiet #scan dir bench.txt file;
+	#if {&file[]}
+	{
+		load;
+		draw
+	}
+}
